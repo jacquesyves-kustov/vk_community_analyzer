@@ -63,6 +63,9 @@ class UsersListHandler:
         :param sex: число, обозначающее пол (1 - женский, 2 - мужской).
         :return: int - число людей пола 'sex' в списке подписчиков.
         """
+        if type(data) != list:
+            return 0
+
         number = 0
 
         for user_dict in data:
@@ -89,6 +92,9 @@ class UsersListHandler:
         :param users: Список словарей с данными о пользователях.
         :return: Возвращает число подписчиков с полной датой рождения
         """
+        if type(users) != list:
+            return 0
+
         counter = 0
 
         for user_d in users:
@@ -105,6 +111,9 @@ class UsersListHandler:
         """
         res = dict()
 
+        if type(users) != list:
+            return res
+
         for user_d in users:
             if cls.__is_user_have_age(user_d):
                 age = cls.get_users_age(user_d["bdate"])
@@ -120,6 +129,9 @@ class UsersListHandler:
         :return: Возвращает словарь {возраст: количество людей в списке}.
         """
         res = dict()
+
+        if type(users) != list:
+            return res
 
         for user_d in users:
             if cls.__is_user_have_age(user_d) and user_d["sex"] == sex:
@@ -152,11 +164,13 @@ class UsersListHandler:
         :param upper_limit: Верхний порог, до которого будут подсчитываться люди (не включительно).
         :return: Число людей с возрастом в диапазоне [lower_limit, upper_limit]
         """
+        if type(age_dict) != dict:
+            return 0
+
         if lower_limit == 0 and upper_limit == 999:
             return sum(age_dict.values())
 
         res = 0
-
         for age in age_dict:
             if lower_limit < age < upper_limit:
                 res = res + age_dict[age]

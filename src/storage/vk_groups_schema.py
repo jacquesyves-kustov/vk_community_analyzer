@@ -1,27 +1,29 @@
 from sqlalchemy.orm import relationship
-from sqlalchemy import Column, Text, Integer, ForeignKey
+from sqlalchemy import Column, Text, Integer, BigInteger, ForeignKey
+
 from .create_tables import Base
 
 
-class VkUniqueGroups(Base):
-    __tablename__ = "vk_unique_groups"
+class VkGroups(Base):
+    __tablename__ = "vk_groups"
 
-    __tableargs__ = {"comment": "Список идентификаторов уникальных ВК-групп в БД"}
+    __tableargs__ = {
+        "comment": "Таблица основных данных о группах, привязанных к моменту обновления"
+    }
 
     true_group_id = Column(
-        Text, primary_key=True, comment="Настоящий id группы, состоящий из цифр"
+        BigInteger,
+        primary_key=True,
+        unique=True,
+        comment="Настоящий id группы, состоящий из цифр",
     )
 
-    groups_general_data = relationship("VkGroupsGeneralData", backref="id")
-    groups_age_data = relationship("VkGroupsAgeData", backref="group_true_id")
+    groups_data = relationship("VkGroupsGeneralData", backref="group_true_id")
     groups_followers = relationship("VkUsersFollowingGroups", backref="group_id")
-
-    def __repr__(self):
-        return f"TRUE ID: {self.true_id}"
 
 
 class VkGroupsGeneralData(Base):
-    __tablename__ = "vk_groups_general_data"
+    __tablename__ = "vk_groups_data"
 
     __tableargs__ = {
         "comment": "Таблица основных данных о группах, привязанных к моменту обновления"
@@ -32,7 +34,7 @@ class VkGroupsGeneralData(Base):
     )
 
     true_group_id = Column(
-        Text, ForeignKey("vk_unique_groups.true_group_id"), primary_key=True
+        BigInteger, ForeignKey("vk_groups.true_group_id"), primary_key=True
     )
 
     title = Column(Text, nullable=False, comment="Название группы")
@@ -57,22 +59,6 @@ class VkGroupsGeneralData(Base):
 
     total_women = Column(
         Integer, nullable=False, comment="Всего женщин среди подписчиков"
-    )
-
-
-class VkGroupsAgeData(Base):
-    __tablename__ = "vk_groups_age_data"
-
-    __tableargs__ = {
-        "comment": "Таблица данных о возрастных группах, привязанных к моменту обновления"
-    }
-
-    version_marker = Column(
-        Integer, ForeignKey("versions.version_marker"), primary_key=True
-    )
-
-    true_group_id = Column(
-        Text, ForeignKey("vk_unique_groups.true_group_id"), primary_key=True
     )
 
     total_users_with_age = Column(

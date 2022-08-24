@@ -1,5 +1,6 @@
 from sqlalchemy.orm import relationship
 from sqlalchemy import Column, Integer
+
 from .create_tables import Base
 
 
@@ -9,15 +10,15 @@ class Versions(Base):
     __tableargs__ = {"comment": "Таблица маркеров версий данных"}
 
     version_marker = Column(
-        Integer, primary_key=True, comment="Число, обозначающее версию данных"
+        Integer,
+        primary_key=True,
+        unique=True,
+        nullable=False,
+        comment="Число, обозначающее версию данных",
     )
 
     vk_group_general_data_version = relationship(
         "VkGroupsGeneralData", backref="vk_group_general_data_version_marker"
-    )
-
-    vk_group_age_data_version = relationship(
-        "VkGroupsAgeData", backref="vk_group_age_data_version_marker"
     )
 
     vk_users_following_groups_data_version = relationship(

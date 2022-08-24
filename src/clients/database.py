@@ -1,8 +1,11 @@
 import sqlalchemy.orm.session
 from sqlalchemy.exc import IntegrityError
-from .versions_schema import Versions
-from .vk_users_schema import VkUsers, VkUsersGeneralData, VkUsersFollowingGroups
-from .vk_groups_schema import VkUniqueGroups, VkGroupsGeneralData, VkGroupsAgeData
+from sqlalchemy.dialects.postgresql import insert
+
+from data_processing import get_groups_data
+from storage.data_versions_schema import Versions
+from storage.vk_users_schema import VkUsersGeneralData, VkUsersFollowingGroups
+from storage.vk_groups_schema import VkGroups, VkGroupsGeneralData
 
 
 class DataCollector:
@@ -13,6 +16,7 @@ class DataCollector:
         """
         Перед каждым регулярным обновлением, изменяется значение для версии данных
         """
+        # TODO: БЕРИ ПОСЛЕДНЮЮ ЗАПИСЬ ИЗ БД И УВЕЛИЧИВАЙ НА ЕДИНИЦУ!!!!
 
         cls.DATA_VERSION += 1
 
@@ -29,20 +33,19 @@ class DataCollector:
     @classmethod
     def create_new_groups_data_rows(
         cls, group_screen_name: str, new_group_data: dict
-    ) -> VkUniqueGroups:
+    ) -> VkGroupsGeneralData:
         """
-        Создает новые строки в таблицы VkUsers, VkUsersGeneralData, VkUsersFollowingGroups
+        Создает новые строки в таблицы VkUsersGeneralData, VkUsersFollowingGroups.
 
         :param group_screen_name:
-        :param new_group_data: {'id': 7293143, 'bdate': '28.8.1975', 'sex': 2, 'first_name': 'Андрей', 'last_name': 'Галь'}
+        :param new_group_data:
         :return:
         """
 
-        # Создаем новый объект для таблицы уникальных групп
-        new_group = VkUniqueGroups(true_group_id=new_group_data["true_group_id"])
+        new_group = VkGroups(true_group_id=new_group_data["true_group_id"])
 
-        # Создаем новый объект для таблицы основных данных
-        new_group_general_data = VkGroupsGeneralData(
+        # Создаем новый объект для таблицы групп и основных данных о них
+        new_group_data = VkGroupsGeneralData(
             version_marker=cls.DATA_VERSION,
             title=new_group_data["title"],
             screen_name=group_screen_name,
@@ -50,11 +53,6 @@ class DataCollector:
             processed_members_count=len(new_group_data["members_lst"]),
             total_men=new_group_data["total_men"],
             total_women=new_group_data["total_women"],
-        )
-
-        # Создаем новый объект для таблицы данных о возрасте
-        new_group_age_data = VkGroupsAgeData(
-            version_marker=cls.DATA_VERSION,
             total_users_with_age=new_group_data["total_users_with_age"],
             all_ages_dict=str(new_group_data["all_ages_dict"]),
             men_ages_dict=str(new_group_data["men_ages_dict"]),
@@ -63,40 +61,9 @@ class DataCollector:
             total_women_with_ages=new_group_data["total_women_with_age"],
         )
 
-        new_group.groups_general_data.append(new_group_general_data)
-        new_group.groups_age_data.append(new_group_age_data)
+        new_group.groups_data.append(new_group_data)
 
         return new_group
-
-    @classmethod
-    def create_new_vk_user_data_rows(cls, user_d: dict, true_group_id: str) -> VkUsers:
-        """
-        Создает новые строки в таблицы VkUsers, VkUsersGeneralData, VkUsersFollowingGroups
-
-        :param user_d: {'id': 7293143, 'bdate': '28.8.1975', 'sex': 2, 'first_name': 'Андрей', 'last_name': 'Галь'}
-        :param true_group_id:
-        :return:
-        """
-
-        new_user = VkUsers(true_user_id=user_d["id"])
-
-        new_user_general_data = VkUsersGeneralData(
-            bdate=user_d["bdate"],
-            sex=user_d["sex"],
-            first_name=user_d["first_name"],
-            last_name=user_d["last_name"],
-        )
-
-        new_user_following_group = VkUsersFollowingGroups(
-            version_marker=cls.DATA_VERSION,
-            true_user_id=str(user_d["id"]),
-            true_group_id=true_group_id,
-        )
-
-        new_user.vk_users_general_data.append(new_user_general_data)
-        new_user.vk_users_following_groups.append(new_user_following_group)
-
-        return new_user
 
     @classmethod
     def add_new_group(cls, group_name, session: sqlalchemy.orm.Session) -> None:
@@ -104,31 +71,39 @@ class DataCollector:
         Функция, которая добавляет в таблицы данные о группе
         Версия данных будет совпадать с актуальной.
         """
+        print(f" >>> {group_name} is being added!")
 
+        # Получаем словарь всех данных о паблике
         new_group_data = get_groups_data(group_name)
+
+        # Добавляем новую группу
         new_group = cls.create_new_groups_data_rows(group_name, new_group_data)
-
         session.add(new_group)
+        session.commit()
 
-        # Создаем новые строки в таблицах юзеров
+        # Добавляем новых юзеров
+        # {'true_user_id': int, 'bdate': 'DD.MM.YYYY', 'sex': int, 'first_name': str, 'last_name': str}
+        stmt = insert(VkUsersGeneralData).values(new_group_data["members_lst"])
+        stmt = stmt.on_conflict_do_nothing(index_elements=["true_user_id"])
+        session.execute(stmt)
+
+        # Добавляем данные о подписках
+        user_following_groups_data = list()
+
         for user_d in new_group_data["members_lst"]:
-            if bool(
-                session.query(VkUsers)
-                .filter(VkUsers.true_user_id == str(user_d["id"]))
-                .first()
-            ):
-                continue
+            d = dict()
+            d["version_marker"] = cls.DATA_VERSION
+            d["true_user_id"] = str(user_d["true_user_id"])
+            d["true_group_id"] = str(new_group_data["true_group_id"])
+            user_following_groups_data.append(d)
 
-            new_user = cls.create_new_vk_user_data_rows(
-                user_d, new_group_data["true_group_id"]
-            )
-            session.add(new_user)
+        stmt = insert(VkUsersFollowingGroups).values(user_following_groups_data)
+        stmt = stmt.on_conflict_do_nothing(
+            index_elements=["version_marker", "true_user_id", "true_group_id"]
+        )
+        session.execute(stmt)
 
-        try:
-            session.commit()
-
-        except IntegrityError:
-            session.rollback()
+        print(f" >>> {group_name} has been added!")
 
     @classmethod
     def update_groups_data(cls):

@@ -1,6 +1,8 @@
-import requests
 import time
+
+import requests
 from requests import Response
+
 from config import VK_TOKEN, VK_API_VER
 
 
@@ -30,7 +32,7 @@ class VkApiClient:
     @staticmethod
     def __sleep_decorator(func):
         """
-        VK API позволяет делать до 3 запросов в секунду - в лучшем случае мы будем делать 2
+        VK API позволяет делать до 3 запросов в секунду.
         """
 
         def wrapper(*args, **kwargs):
@@ -59,7 +61,9 @@ class VkApiClient:
         )
 
         json = r.json()["response"][0]  # Структура ответа: {'response': [{data: data}]}
-        print(f" >>> {group_id} количество подписчиков получено!")
+        print(
+            f" {group_id}, {json['name']} ({json['id']}) количество подписчиков получено: {json['members_count']}"
+        )
 
         return json["members_count"], json["id"], json["name"]
 
@@ -111,9 +115,9 @@ class VkApiClient:
         for user_d in r.json()["response"]["items"]:
             new_user_d = dict()
 
-            new_user_d["id"] = user_d["id"]
+            new_user_d["true_user_id"] = user_d["id"]
             new_user_d["bdate"] = user_d["bdate"] if "bdate" in user_d else "None"
-            new_user_d["sex"] = user_d["sex"] if "sex" in user_d else "None"
+            new_user_d["sex"] = user_d["sex"] if "sex" in user_d else 0
             new_user_d["first_name"] = user_d["first_name"]
             new_user_d["last_name"] = user_d["last_name"]
 

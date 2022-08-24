@@ -12,7 +12,7 @@ def create_database() -> None:
     Функция, которая инициализирует все таблицы
     """
 
-    db_engine = create_engine(POSTGRES_CONNECTION_STR, echo=True)
+    db_engine = create_engine(POSTGRES_CONNECTION_STR, echo=False)
     Base.metadata.create_all(db_engine)
 
 

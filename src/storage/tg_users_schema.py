@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Text, BigInteger
+
 from .create_tables import Base
 
 
