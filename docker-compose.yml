@@ -1,0 +1,37 @@
+version: "3.8"
+
+
+services:
+  broker:
+    image: rabbitmq:3.10-management
+    ports:
+      - 5672:5672
+      - 15672:15672
+
+  database:
+    image: postgres:14
+    environment:
+      POSTGRES_USER: music_and_people
+      POSTGRES_PASSWORD: password
+    ports:
+      - 5432:5432
+    depends_on:
+      - "broker"
+
+  database_init:
+    build: .
+    entrypoint: python3
+    command:
+      - src/__main__.py
+      - db
+    depends_on:
+      - "database"
+
+  data_sender:
+    build: .
+    entrypoint: python3
+    command:
+      - src/__main__.py
+      - sender
+    depends_on:
+      - "database_init"
