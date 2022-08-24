@@ -11,17 +11,14 @@ def get_groups_data(group_name: str) -> dict:
 
     # Получаем истинное количество подписчиков, идентификатор и имя в адресной строке
     (
-        group_data["members_num"],
-        group_data["true_group_id"],
-        group_data["title"],
-    ) = VkApiClient.get_members_number(
-        group_name
-    )  # int, int, str
+        group_data["members_num"],  # int
+        group_data["true_group_id"],  # int
+        group_data["title"],  # str
+    ) = VkApiClient.get_members_number(group_name)
 
     # Генерируем словарь с данными о подписчиках
     # {'id': int, 'bdate': 'DD.MM.YYYY', 'sex': int, 'first_name': str, 'last_name': str}
     group_data["members_lst"] = VkApiClient.get_total_members_list(group_name)
-
     # Сохраняем число мужчин и женщин
     group_data["total_men"] = UsersListHandler.get_members_number_by_sex(
         group_data["members_lst"], 2
@@ -29,12 +26,10 @@ def get_groups_data(group_name: str) -> dict:
     group_data["total_women"] = UsersListHandler.get_members_number_by_sex(
         group_data["members_lst"], 1
     )
-
     # Сохраняем общее число людей с возрастом
     group_data["total_users_with_age"] = UsersListHandler.get_number_of_users_with_age(
         group_data["members_lst"]
     )
-
     # Получаем словари {возраст: число людей} для:
     # Всех подписчиков
     group_data["all_ages_dict"] = UsersListHandler.get_dict_of_users_age(
@@ -48,7 +43,6 @@ def get_groups_data(group_name: str) -> dict:
     group_data["women_ages_dict"] = UsersListHandler.get_users_age_dict_by_sex(
         group_data["members_lst"], 1
     )
-
     # Получаем общее число мужчин с возрастом
     group_data["total_men_with_age"] = UsersListHandler.get_total_number_in_age_dict(
         group_data["men_ages_dict"]
