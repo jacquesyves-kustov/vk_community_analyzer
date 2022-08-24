@@ -3,7 +3,6 @@ from sqlalchemy.exc import IntegrityError
 from .versions_schema import Versions
 from .vk_users_schema import VkUsers, VkUsersGeneralData, VkUsersFollowingGroups
 from .vk_groups_schema import VkUniqueGroups, VkGroupsGeneralData, VkGroupsAgeData
-from data_fetcher import get_groups_data
 
 
 class DataCollector:
