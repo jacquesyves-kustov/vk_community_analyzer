@@ -27,11 +27,11 @@ services:
     depends_on:
       - "database"
 
-  data_sender:
-    build: .
-    entrypoint: python3
-    command:
-      - src/__main__.py
-      - sender
-    depends_on:
-      - "database_init"
+#  data_sender:
+#    build: .
+#    entrypoint: python3
+#    command:
+#      - src/__main__.py
+#      - sender
+#    depends_on:
+#      - "database_init"

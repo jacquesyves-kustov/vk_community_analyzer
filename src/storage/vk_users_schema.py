@@ -23,9 +23,6 @@ class VkUsersFollowingGroups(Base):
     __tablename__ = "vk_users_following_groups"
     __tableargs__ = {"comment": "Таблица подписок юзеров ВК с учетом версий"}
 
-    version_marker = Column(
-        Integer, ForeignKey("versions.version_marker"), primary_key=True
-    )
     true_user_id = Column(
         BigInteger, ForeignKey("vk_users.true_user_id"), primary_key=True
     )

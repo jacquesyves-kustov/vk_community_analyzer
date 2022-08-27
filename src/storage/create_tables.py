@@ -1,6 +1,7 @@
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Session
+
 from config import POSTGRES_CONNECTION_STR
 
 
@@ -21,7 +22,7 @@ def get_database_session() -> Session:
     :return: Объект БД-сессии.
     """
 
-    db_engine = create_engine(POSTGRES_CONNECTION_STR, echo=True)
+    db_engine = create_engine(POSTGRES_CONNECTION_STR, echo=False)
     session = Session(db_engine, future=True)
 
     return session
