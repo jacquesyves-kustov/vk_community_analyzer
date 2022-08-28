@@ -1,1 +1,1 @@
-from .report_plots import PlotsGenerator
+from .bot import create_bot

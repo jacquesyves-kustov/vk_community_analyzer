@@ -60,7 +60,12 @@ class VkApiClient:
             cls.VK_GROUP_GET_BY_ID, group_id=group_id, fields="members_count,name"
         )
 
-        json = r.json()["response"][0]  # Структура ответа: {'response': [{data: data}]}
+        json = r.json()
+
+        if "error" in json:
+            return "error", "error", "error"
+
+        json = json["response"][0]  # Структура ответа: {'response': [{data: data}]}
         print(
             f" {group_id}, {json['name']} ({json['id']}) количество подписчиков получено: {json['members_count']}"
         )

@@ -4,9 +4,10 @@ from clients.vk_api import VkApiClient
 
 def get_groups_data(group_name: str) -> dict:
     """
-    Метод, генерирующий словарь всех необходимых данных о сообществе.
-    """
+    Обращение к VK API для получения всех данных о группе и обработка этих данных.
 
+    :param group_name: Короткий идентификатор группы в адресной строке.
+    """
     group_data = dict()
 
     # Получаем истинное количество подписчиков, идентификатор и имя в адресной строке
@@ -16,37 +17,48 @@ def get_groups_data(group_name: str) -> dict:
         group_data["title"],  # str
     ) = VkApiClient.get_members_number(group_name)
 
+    if group_data["members_num"] == "error":
+        return {"error": "error"}
+
     # Генерируем словарь с данными о подписчиках
     # {'id': int, 'bdate': 'DD.MM.YYYY', 'sex': int, 'first_name': str, 'last_name': str}
     group_data["members_lst"] = VkApiClient.get_total_members_list(group_name)
+
     # Сохраняем число мужчин и женщин
     group_data["total_men"] = UsersListHandler.get_members_number_by_sex(
         group_data["members_lst"], 2
     )
+
     group_data["total_women"] = UsersListHandler.get_members_number_by_sex(
         group_data["members_lst"], 1
     )
+
     # Сохраняем общее число людей с возрастом
     group_data["total_users_with_age"] = UsersListHandler.get_number_of_users_with_age(
         group_data["members_lst"]
     )
+
     # Получаем словари {возраст: число людей} для:
     # Всех подписчиков
     group_data["all_ages_dict"] = UsersListHandler.get_dict_of_users_age(
         group_data["members_lst"]
     )
+
     # Всех мужчин
     group_data["men_ages_dict"] = UsersListHandler.get_users_age_dict_by_sex(
         group_data["members_lst"], 2
     )
+
     # Всех женщин
     group_data["women_ages_dict"] = UsersListHandler.get_users_age_dict_by_sex(
         group_data["members_lst"], 1
     )
+
     # Получаем общее число мужчин с возрастом
     group_data["total_men_with_age"] = UsersListHandler.get_total_number_in_age_dict(
         group_data["men_ages_dict"]
     )
+
     # Получаем общее число женщин с возрастом
     group_data["total_women_with_age"] = UsersListHandler.get_total_number_in_age_dict(
         group_data["women_ages_dict"]
@@ -177,4 +189,24 @@ class UsersListHandler:
             if lower_limit < age < upper_limit:
                 res = res + age_dict[age]
 
+        return res
+
+    @staticmethod
+    def filter_age_dict(
+        users_age_data: dict, lower_limit: int = 0, upper_limit: int = 999
+    ) -> dict:
+        res = dict()
+
+        for age in users_age_data:
+            if lower_limit < int(age) < upper_limit:
+                res[int(age)] = users_age_data[age]
+
+        els = list(res.items())
+        min_key = els[0]
+        max_key = els[-1]
+
+        for age in range(min_key[0], max_key[0]):
+            res.setdefault(age, 0)
+
+        res = dict(sorted(res.items()))
         return res
