@@ -10,24 +10,7 @@ class VkApiClient:
     VK_REQ_START = "https://api.vk.com/method/"
     VK_GROUP_GET_BY_ID = "groups.getById"
     VK_GROUP_GET_MEMBERS = "groups.getMembers"
-
-    @classmethod
-    def __send_get_request(cls, method: str, **kwargs) -> Response:
-        """
-        Метод для генерации запроса к VK API.
-
-        :param method: Строка с методом VK API.
-        :param **kwargs: Дополнительные параметры запроса.
-        """
-
-        payload = kwargs
-        payload["access_token"] = VK_TOKEN
-        payload["v"] = VK_API_VER
-
-        r = requests.get(f"{cls.VK_REQ_START}{method}", params=payload)
-        r.raise_for_status()
-
-        return r
+    VK_WALL_GET = "wall.get"
 
     @staticmethod
     def __sleep_decorator(func):
@@ -36,7 +19,7 @@ class VkApiClient:
         """
 
         def wrapper(*args, **kwargs):
-            time.sleep(0.1)
+            time.sleep(0.34)
 
             try:
                 res = func(*args, **kwargs)
@@ -49,6 +32,23 @@ class VkApiClient:
 
     @classmethod
     @__sleep_decorator
+    def send_get_request(cls, method: str, **kwargs) -> Response:
+        """
+        Метод для генерации запроса к VK API.
+
+        :param method: Строка с методом VK API.
+        """
+
+        payload = kwargs
+        payload["access_token"] = VK_TOKEN
+        payload["v"] = VK_API_VER
+
+        r = requests.get(f"{cls.VK_REQ_START}{method}", params=payload)
+        r.raise_for_status()
+
+        return r
+
+    @classmethod
     def get_members_number(cls, group_id: str) -> tuple:
         """
         Получение общей информации о группе.
@@ -56,7 +56,7 @@ class VkApiClient:
         """
 
         # Отправляем запрос
-        r = cls.__send_get_request(
+        r = cls.send_get_request(
             cls.VK_GROUP_GET_BY_ID, group_id=group_id, fields="members_count,name"
         )
 
@@ -73,7 +73,6 @@ class VkApiClient:
         return json["members_count"], json["id"], json["name"]
 
     @classmethod
-    @__sleep_decorator
     def get_total_members_list(cls, group_id: str):
         """
         Получение полного списка подписчиков
@@ -99,14 +98,13 @@ class VkApiClient:
         return members_d
 
     @classmethod
-    @__sleep_decorator
     def get_members_sublist(cls, group_id: str, offset: int) -> list:
         """
         Возвращает список словарей, содержащих полезные данные о подписчике
         """
 
         # Отправляем запрос
-        r = cls.__send_get_request(
+        r = cls.send_get_request(
             cls.VK_GROUP_GET_MEMBERS,
             group_id=group_id,
             fields="bdate,sex",
