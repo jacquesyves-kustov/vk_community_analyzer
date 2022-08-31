@@ -11,9 +11,7 @@
 | ------- | ------ |
 | <img src="https://i.ibb.co/yyKQ6k0/image.jpg" width="330">  | <img src="https://i.ibb.co/CM0NfX5/image.jpg" width="330"> | 
 
-
 ## Больше примеров
-## Примеры
 | Example 3  | Example 4 | Example 5 |
 | ------- | ------ | ------ |
 | <img src="https://i.ibb.co/w6NHpCK/image.jpg" width="330">  | <img src="https://i.ibb.co/tKdjvYF/image.jpg" width="330"> | <img src="https://i.ibb.co/R7s6JDM/image.jpg" width="330"> |
