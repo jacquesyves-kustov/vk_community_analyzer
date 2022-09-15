@@ -3,10 +3,11 @@ import time
 import requests
 from requests import Response
 
-from config import VK_TOKEN, VK_API_VER
+from config import VK_TOKEN
 
 
 class VkApiClient:
+    VK_API_VER = '5.131'
     VK_REQ_START = "https://api.vk.com/method/"
     VK_GROUP_GET_BY_ID = "groups.getById"
     VK_GROUP_GET_MEMBERS = "groups.getMembers"
@@ -41,7 +42,7 @@ class VkApiClient:
 
         payload = kwargs
         payload["access_token"] = VK_TOKEN
-        payload["v"] = VK_API_VER
+        payload["v"] = cls.VK_API_VER
 
         r = requests.get(f"{cls.VK_REQ_START}{method}", params=payload)
         r.raise_for_status()

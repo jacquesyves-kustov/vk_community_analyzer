@@ -4,14 +4,11 @@ from storage import db_session, DatabaseInterface
 from clients import RabbitClient
 from worker import WorkerMessageHandler
 from config import TELEGRAM_TOKEN
-from .content_enums import Command
+from .content_enums import Command, CALLBACK_DATA_SEP
 from .content_generator import MessageGenerator
 
 
 def create_bot():
-    """Создает бота"""
-
-    # Экземпляр бота
     bot = telebot.TeleBot(TELEGRAM_TOKEN)
     rabbitmq_client = RabbitClient(RabbitClient.DEFAULT_QUEUE)
 
@@ -33,29 +30,54 @@ def create_bot():
 
         # Выводим сообщения
         bot.send_message(
-            chat_id, MessageGenerator.get_hello_msg(user_name), parse_mode="Markdown"
+            chat_id,
+            MessageGenerator.get_hello_msg(user_name),
+            parse_mode="Markdown"
         )
 
         bot.send_message(
-            chat_id, MessageGenerator.get_tutorial_msg(), parse_mode="Markdown"
+            chat_id,
+            MessageGenerator.get_tutorial_msg(),
+            parse_mode="Markdown"
         )
 
     @bot.message_handler(content_types="text")
     def message_reply(message):
         """Обработка кнопок, которые отправляют текстовые сообщения"""
 
-        broker_msg = (
-            message.text
-            + WorkerMessageHandler.MESSAGE_DATA_SEP
-            + str(message.from_user.id)
-        )
-
         # Выводим сообщения
         bot.send_message(
-            message.chat.id, MessageGenerator.get_wait_msg(), parse_mode="Markdown"
+            message.chat.id,
+            MessageGenerator.get_default_answer(message.text),
+            reply_markup=MessageGenerator.get_default_inline_buttons(message.text, str(message.chat.id))
         )
 
-        # Отправляем сообщение брокеру
+    @bot.callback_query_handler(func=lambda call: True)
+    def callback_handler(call):
+        """
+        Обработка inline кнопок.
+        call.data.split(callback_data_sep)[0] - команда.
+        call.data.split(callback_data_sep)[1] - данные для передачи хэндлеру.
+        call.data.split(callback_data_sep)[2] - user_id.
+        ...
+        """
+
+        workers_task, data_to_process, user_id = call.data.split(CALLBACK_DATA_SEP)
+
+        broker_msg = (
+            workers_task
+            + WorkerMessageHandler.MESSAGE_DATA_SEP
+            + data_to_process
+            + WorkerMessageHandler.MESSAGE_DATA_SEP
+            + user_id
+        )
+
         rabbitmq_client.publish(broker_msg, RabbitClient.DEFAULT_QUEUE)
+
+        bot.send_message(
+            call.message.chat.id,
+            MessageGenerator.get_wait_msg(),
+            parse_mode="Markdown"
+        )
 
     bot.infinity_polling()

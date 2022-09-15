@@ -1,6 +1,5 @@
 import argparse
 
-from data_processing import PostsHandler
 from bot_engine import create_bot
 from clients import RabbitClient
 from storage import create_database
@@ -22,3 +21,6 @@ if args.mode == "worker":
         WorkerMessageHandler.worker_message_handler, RabbitClient.DEFAULT_QUEUE
     )
     rabbitmq_client.__del__()
+
+if args.mode == 'test':
+    pass

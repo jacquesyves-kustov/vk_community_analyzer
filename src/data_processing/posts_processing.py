@@ -22,7 +22,7 @@ class PostsHandler:
         return artists_set
 
     @classmethod
-    def count_artists_mentions(cls, public_screen_name: str, days_limit: int) -> dict:
+    def count_artists_attachments_in_public(cls, public_screen_name: str, days_limit: int) -> dict:
         """
         Подсчитывает количество прикреплений песен артистов к постам в паблике.
 

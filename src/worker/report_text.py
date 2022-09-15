@@ -46,11 +46,8 @@ class ReportGenerator:
         :param group_data:
         :return:
         """
-        report = "*" + ReportContent.NAME.value.format(group_data["title"]) + "*"
-
-        if not "_" in group_data["screen_name"]:
-            report += ReportContent.LINK.value.format(group_data["screen_name"])
-
+        report = ReportContent.NAME.value.format(group_data["title"])
+        report += ReportContent.LINK.value.format(group_data["screen_name"])
         report += "\n"
 
         report += ReportContent.TOTAL_MEMBERS_NUMS.value.format(
