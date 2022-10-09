@@ -8,10 +8,13 @@ from config import VK_TOKEN
 
 class VkApiClient:
     VK_API_VER = '5.131'
-    VK_REQ_START = "https://api.vk.com/method/"
-    VK_GROUP_GET_BY_ID = "groups.getById"
-    VK_GROUP_GET_MEMBERS = "groups.getMembers"
-    VK_WALL_GET = "wall.get"
+    VK_REQ_START = 'https://api.vk.com/method/'
+    VK_GROUPS_GET_BY_ID = 'groups.getById'
+    VK_GROUPS_GET_MEMBERS = "groups.getMembers"
+    VK_GROUPS_GET_TAG_LIST = 'groups.getTagList'
+    VK_WALL_GET = 'wall.get'
+    VK_EXECUTE = 'execute'
+    VK_USERS_GET_SUBS = 'users.getSubscriptions'
 
     @staticmethod
     def __sleep_decorator(func):
@@ -58,7 +61,7 @@ class VkApiClient:
 
         # Отправляем запрос
         r = cls.send_get_request(
-            cls.VK_GROUP_GET_BY_ID, group_id=group_id, fields="members_count,name"
+            cls.VK_GROUPS_GET_BY_ID, group_id=group_id, fields="members_count,name"
         )
 
         json = r.json()
@@ -106,17 +109,17 @@ class VkApiClient:
 
         # Отправляем запрос
         r = cls.send_get_request(
-            cls.VK_GROUP_GET_MEMBERS,
+            cls.VK_GROUPS_GET_MEMBERS,
             group_id=group_id,
             fields="bdate,sex",
             offset=offset,
-        )
+        ).json()
 
         # Список словарей
         res_lst = []
 
         # Из получаемых данных сохраняем только id, дату рождения, пол, имя, фамилию
-        for user_d in r.json()["response"]["items"]:
+        for user_d in r["response"]["items"]:
             new_user_d = dict()
 
             new_user_d["true_user_id"] = user_d["id"]

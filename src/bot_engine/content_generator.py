@@ -26,8 +26,14 @@ class MessageGenerator:
             callback_data=Tasks.GET_ATTACHED_ARTISTS_IN_PUBLIC.value + CALLBACK_DATA_SEP + data + CALLBACK_DATA_SEP + user_id
         )
 
+        related_publics_btn = types.InlineKeyboardButton(
+            Buttons.GET_RELATED_PUBLIC.value,
+            callback_data=Tasks.GET_RELATED_PUBLICS.value + CALLBACK_DATA_SEP + data + CALLBACK_DATA_SEP + user_id
+        )
+
         keyboard.row(audience_analyze_btn)
         keyboard.row(attached_artists_btn)
+        keyboard.row(related_publics_btn)
 
         return keyboard
 

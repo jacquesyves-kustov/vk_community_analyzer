@@ -4,7 +4,7 @@ from enum import Enum
 
 from requests import post
 
-from data_processing import PostsHandler
+from data_processing import PostsHandler, get_related_publics
 from config import TELEGRAM_TOKEN
 from .report_text import ReportGenerator
 from .report_plots import PlotsGenerator
@@ -14,6 +14,7 @@ from storage import db_session, DatabaseInterface
 class Tasks(Enum):
     AUDIENCE_ANALYZE = 'audience_analyze'
     GET_ATTACHED_ARTISTS_IN_PUBLIC = 'get_attached_artists'
+    GET_RELATED_PUBLICS = 'get_related_publics'
 
 
 class WorkerMessageHandler:
@@ -22,16 +23,20 @@ class WorkerMessageHandler:
     # TODO: Сделай клиент тг апи!
     @staticmethod
     def send_message(message_text: str, tg_user_id: Union[str, int]):
-        # TODO: проверка на длину сообщения!
+        messages = []
+        while len(message_text) > 3_999:
+            messages.append(message_text[:3999])
+            message_text = message_text[3999:]
 
-        # Заполняем строку запроса
-        send_message_url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage?"
-        send_message_url += (
-            f"chat_id={str(tg_user_id)}&text={message_text}"
-        )
+        messages.append(message_text)
 
-        # Отправляем запрос
-        post(send_message_url)
+        for msg in messages:
+            send_message_url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage?"
+            send_message_url += (
+                f"chat_id={str(tg_user_id)}&text={msg}"
+            )
+
+            post(send_message_url)
 
     @staticmethod
     def send_plot(tg_user_id: str, img_name):
@@ -89,6 +94,24 @@ class WorkerMessageHandler:
         cls.send_message(message_text[:-1], str(tg_user_chat_id))
 
     @classmethod
+    def process_get_related_publics_task(cls, public_name: str, tg_user_chat_id: Union[str, int]):
+        found_groups = get_related_publics(public_name)
+
+        # define higher values
+        sorted_values = sorted(found_groups.values())
+        sorted_values.reverse()
+
+        if len(sorted_values) > 10:
+            sorted_values = sorted_values[:10]
+
+        message_text = f'У паблика vk.com/{public_name} общие подписчики с:\n'
+        for popular_group in found_groups:
+            if found_groups[popular_group] in sorted_values:
+                message_text += f'vk.com/public{popular_group}: общих {found_groups[popular_group]} участников.\n'
+
+        cls.send_message(message_text, str(tg_user_chat_id))
+
+    @classmethod
     def worker_message_handler(cls, message_body: str) -> None:
         """
         Логика обработки сообщений из брокера.
@@ -101,3 +124,6 @@ class WorkerMessageHandler:
 
         elif task == Tasks.GET_ATTACHED_ARTISTS_IN_PUBLIC.value:
             cls.process_attached_artists_task(data_to_process, tg_user_chat_id)
+
+        elif task == Tasks.GET_RELATED_PUBLICS.value:
+            cls.process_get_related_publics_task(data_to_process, tg_user_chat_id)
